@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "564377456837",
+    "project_id": "sched-builder",
+    "storage_bucket": "sched-builder.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:564377456837:android:81a6aedbff1e46335b20ac",
+        "android_client_info": {
+          "package_name": "com.example.sched_builder"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBD60DR0SbxNaYIsJnlrLe62ZFAPm7YU3k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
