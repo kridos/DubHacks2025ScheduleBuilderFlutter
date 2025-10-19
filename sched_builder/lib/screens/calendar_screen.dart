@@ -7,7 +7,6 @@ import 'dart:math'; // Required for sin and cos
 import '../providers/event_provider.dart';
 import '../widgets/loading_indicator.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
 import '../widgets/audio_recorder_button.dart';
 
 // --- Color Palette ---
@@ -43,6 +42,7 @@ class _CalendarScreenState extends State<CalendarScreen> with TickerProviderStat
   late AnimationController _shakeController;
   late AnimationController _circleController;
   late AnimationController _gradientController;
+  final TextEditingController _quickAddController = TextEditingController();
 
   @override
   void initState() {
@@ -73,7 +73,49 @@ class _CalendarScreenState extends State<CalendarScreen> with TickerProviderStat
     _shakeController.dispose();
     _circleController.dispose();
     _gradientController.dispose();
+    _quickAddController.dispose();
     super.dispose();
+  }
+
+  // Handle quick add by text
+  Future<void> _handleQuickAdd(EventProvider provider) async {
+    final text = _quickAddController.text.trim();
+    if (text.isEmpty) return;
+
+    try {
+      await provider.addEventByText(text);
+      _quickAddController.clear();
+      
+      if (mounted) {
+        if (provider.error != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${provider.error}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Event added successfully!'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+          // Refresh events for current date
+          await provider.fetchEventsForDate(provider.selectedDate);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   // Pick image from gallery and upload
@@ -216,6 +258,7 @@ class _CalendarScreenState extends State<CalendarScreen> with TickerProviderStat
                                   children: [
                                     Expanded(
                                       child: TextField(
+                                        controller: _quickAddController,
                                         style: TextStyle(color: kTextColor),
                                         decoration: InputDecoration(
                                           hintText: 'Type a new event...',
@@ -223,7 +266,8 @@ class _CalendarScreenState extends State<CalendarScreen> with TickerProviderStat
                                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                           hintStyle: TextStyle(color: kTextColor.withOpacity(0.6)),
                                         ),
-                                        // TODO: Wire up controller and logic as needed
+                                        onSubmitted: (_) => _handleQuickAdd(provider),
+                                        textInputAction: TextInputAction.send,
                                       ),
                                     ),
                                     const SizedBox(width: 8),
@@ -231,7 +275,7 @@ class _CalendarScreenState extends State<CalendarScreen> with TickerProviderStat
                                       decoration: kGradientDecoration,
                                       child: IconButton(
                                         icon: const Icon(Icons.send, color: Colors.white),
-                                        onPressed: () {}, // TODO: Wire up logic
+                                        onPressed: () => _handleQuickAdd(provider),
                                         tooltip: 'Send Event',
                                       ),
                                     ),
