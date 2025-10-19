@@ -4,6 +4,7 @@ class Event {
   final DateTime startTime;
   final DateTime endTime;
   final String? description;
+  
 
   Event({
     required this.id,
@@ -11,6 +12,7 @@ class Event {
     required this.startTime,
     required this.endTime,
     this.description,
+    
   });
 
   factory Event.fromJson(Map<String, dynamic> json) {

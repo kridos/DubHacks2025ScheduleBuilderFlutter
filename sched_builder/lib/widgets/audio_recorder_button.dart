@@ -10,25 +10,61 @@ class AudioRecorderButton extends StatefulWidget {
 }
 
 class _AudioRecorderButtonState extends State<AudioRecorderButton> {
-  final TextEditingController _descriptionController = TextEditingController();
+  static const Color kGradientStart = Color(0xFF7250E8);
+  static const Color kGradientEnd = Color(0xFFE1306C);
+  static const Color kRedGradientEnd = Color(0xFFB71C1C);
 
   @override
   Widget build(BuildContext context) {
     return Consumer<EventProvider>(
       builder: (context, provider, _) {
-        return Column(
-          children: [
-            ElevatedButton.icon(
-              onPressed: provider.isRecording
-                  ? () => _showStopDialog(context, provider)
+        final bool isRecording = provider.isRecording;
+        final Gradient gradient = isRecording
+            ? LinearGradient(
+                colors: [kGradientEnd, kRedGradientEnd],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : LinearGradient(
+                colors: [kGradientStart, kGradientEnd],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              );
+        return Container(
+          decoration: BoxDecoration(
+            gradient: gradient,
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(32),
+              onTap: isRecording
+                  ? () => _stopRecording(context, provider)
                   : () => _startRecording(context, provider),
-              icon: Icon(provider.isRecording ? Icons.stop : Icons.mic),
-              label: Text(provider.isRecording ? 'Stop Recording' : 'Record Event'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: provider.isRecording ? Colors.red : Colors.blue,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(isRecording ? Icons.stop : Icons.mic, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Text(
+                      isRecording ? 'Stop Recording' : 'Record Event',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
+          ),
         );
       },
     );
@@ -38,39 +74,18 @@ class _AudioRecorderButtonState extends State<AudioRecorderButton> {
     provider.startRecording();
   }
 
-  void _showStopDialog(BuildContext context, EventProvider provider) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Event Description'),
-          content: TextField(
-            controller: _descriptionController,
-            decoration: const InputDecoration(hintText: 'Describe the event'),
-            maxLines: 3,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                provider.stopRecordingAndUpload(_descriptionController.text);
-                _descriptionController.clear();
-                Navigator.pop(context);
-              },
-              child: const Text('Upload'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  @override
-  void dispose() {
-    _descriptionController.dispose();
-    super.dispose();
+  void _stopRecording(BuildContext context, EventProvider provider) async {
+    // Automatically stop and upload
+    await provider.stopRecordingAndUpload('');
+    // You could show a snackbar if you want feedback
+    if (provider.error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${provider.error}')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Recording uploaded successfully')),
+      );
+    }
   }
 }

@@ -38,23 +38,13 @@ class _AudioPlayerState extends State<AudioPlayer> {
                   children: [
                     ElevatedButton.icon(
                       onPressed: () {
-                        provider.playBriefing();
+                        provider.fetchBriefing(DateTime.now());
                         setState(() => _isPlaying = true);
                       },
                       icon: const Icon(Icons.play_arrow),
                       label: const Text('Play Audio'),
                     ),
                     const SizedBox(width: 8),
-                    ElevatedButton.icon(
-                      onPressed: _isPlaying
-                          ? () {
-                              provider.pauseBriefing();
-                              setState(() => _isPlaying = false);
-                            }
-                          : null,
-                      icon: const Icon(Icons.pause),
-                      label: const Text('Pause'),
-                    ),
                   ],
                 ),
               ],

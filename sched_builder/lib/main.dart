@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:timezone/data/latest.dart' as tz_data;
 import 'providers/event_provider.dart';
 import 'screens/calendar_screen.dart';
-import 'screens/summary_screen.dart';
+import 'screens/event_screen.dart'; // <-- 1. UPDATED IMPORT
+import 'screens/settings_screen.dart';
 
 void main() {
+  tz_data.initializeTimeZones();
   runApp(const MyApp());
 }
 
@@ -22,7 +25,7 @@ final storage = const FlutterSecureStorage();
 
 Future<String?> signInAndGetToken() async {
   try {
-    final account = await _googleSignIn.signIn();
+    final account = await _googleSignIn.signInSilently() ?? await _googleSignIn.signIn();
     if (account == null) return null; // user canceled sign-in
     final auth = await account.authentication;
     await storage.write(key: 'access_token', value: auth.accessToken);
@@ -70,17 +73,38 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   Future<void> _authenticateUser() async {
-    final token = await storage.read(key: 'access_token') ?? await signInAndGetToken();
-
-    if (token != null) {
-      context.read<EventProvider>().setAccessToken(token);
-      setState(() => _loading = false);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Google Sign-In failed')),
-      );
-    }
+  String? token = await storage.read(key: 'access_token');
+  
+  // If no token is stored or the stored token might be expired, sign in
+  if (token == null) {
+    token = await signInAndGetToken();
+  } else {
+    // OPTIONAL: A more robust solution would be to implement token refresh
+    // For now, let's try using the stored token, but your EventProvider 
+    // should handle the 'invalid_token' error by prompting re-auth.
+    // However, to fix the IMMEDIATE issue of a stale token from secure storage:
+    
+    // We will rely on signInSilently() in signInAndGetToken to refresh if needed.
+    // Call signInAndGetToken() to attempt to sign in silently and get a fresh token.
+    // signInAndGetToken() will try to use the existing credentials to get a new token.
+    token = await signInAndGetToken();
   }
+
+  if (token != null && mounted) {
+    context.read<EventProvider>().setAccessToken(token);
+    setState(() => _loading = false);
+  } else if (mounted) {
+    setState(() => _loading = false); // Stop loading even if sign-in fails
+    
+    // If sign-in failed, clear any stale token to force a full sign-in next time
+    await storage.delete(key: 'access_token'); 
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Google Sign-In failed or was cancelled.')),
+    );
+    // You might want to show a Sign-In button here instead of HomeScreen
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -95,6 +119,7 @@ class _AuthGateState extends State<AuthGate> {
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
+  
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -103,9 +128,11 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
+  // --- 2. ADD SCREEN TO THE LIST ---
   final List<Widget> _screens = [
     const CalendarScreen(),
-    const SummaryScreen(),
+    const EventsScreen(), // Using the correct screen name
+    const SettingsScreen(),
   ];
 
   @override
@@ -115,14 +142,21 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) => setState(() => _selectedIndex = index),
+        // Adding type makes unselected items visible and keeps their color
+        type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today),
             label: 'Calendar',
           ),
+          // --- 3. ADD NEW TAB ITEM ---
           BottomNavigationBarItem(
-            icon: Icon(Icons.summarize),
-            label: 'Summary',
+            icon: Icon(Icons.edit_calendar_outlined),
+            label: 'Events',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
           ),
         ],
       ),
