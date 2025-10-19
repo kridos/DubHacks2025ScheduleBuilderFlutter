@@ -218,11 +218,12 @@ class EventProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      AudioBriefing _briefing = await _apiService.getAudioBriefing(date,  _accessToken ?? '', _selectedTimeZone);
+      String _briefing = await _apiService.getAudioBriefing(date,  _accessToken ?? '', _selectedTimeZone);
+      debugPrint("Briefing fetched: ${_briefing}");
 
-      if (_briefing != null && _briefing!.audioUrl.isNotEmpty) {
+      if (_briefing != null && _briefing!.isNotEmpty) {
       try {
-        await _audioService.playAudio(_briefing!.audioUrl);
+        await _audioService.playAudio(_briefing);
       } catch (e) {
         _error = e.toString();
         notifyListeners();

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../models/event.dart';
@@ -5,7 +6,7 @@ import '../models/briefing.dart';
 import 'dart:io';
 
 class ApiService {
-  static const String baseUrl = 'http://your-backend-api.com';
+  static const String baseUrl = 'http://10.0.2.2:8000';
 
   // Upload audio for transcription and event creation
   Future<void> uploadAudio(String audioPath, String accessToken, String timezone) async {
@@ -38,7 +39,7 @@ class ApiService {
   }
 
   // Fetch audio briefing for the day
-  Future<AudioBriefing> getAudioBriefing(
+  Future<String> getAudioBriefing(
     DateTime date,
     String accessToken,
     String timezone,
@@ -61,7 +62,8 @@ class ApiService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final json = jsonDecode(response.body);
-        return AudioBriefing.fromJson(json as Map<String, dynamic>);
+        debugPrint("Briefing response JSON: $json");
+        return json['audio_url'] as String;
       } else {
         throw Exception('Failed to load briefing');
       }
