@@ -176,6 +176,9 @@ class EventProvider extends ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
+
+
+
       final newEvent = await _apiService.uploadAudio(
         audioPath,
         _accessToken ?? '',
@@ -244,9 +247,9 @@ class EventProvider extends ChangeNotifier {
     notifyListeners();
 
     final newEvent = await _apiService.uploadImage(
+      imagePath,
       _accessToken ?? '',
       _selectedTimeZone,
-      imagePath
     );
     _events = await _fetchGoogleCalendarEvents(DateTime.now());
     _stats = ScheduleStats.calculate(_events, _selectedDate);

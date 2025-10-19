@@ -102,13 +102,13 @@ class ApiService {
   try {
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('$baseUrl/api/add-event-by-image'),
+      Uri.parse('$baseUrl/api/uploadSchedule'),
     );
 
     request.files.add(
       await http.MultipartFile.fromPath('file', imagePath),
     );
-
+    debugPrint("Access Token ${accessToken}");
     request.fields['access_token'] = accessToken;
     request.fields['timezone'] = timezone;
 
